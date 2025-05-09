@@ -1,6 +1,9 @@
 #!/usr/bin/env php
 <?php
 
+// 禁用弃用警告
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
 use App\Kernel;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 

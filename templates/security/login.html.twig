@@ -1,0 +1,56 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}登录 - 火箭邮社{% endblock %}
+
+{% block auth_content %}
+<div class="container">
+    <div class="row justify-content-center min-vh-100 align-items-center">
+        <div class="col-lg-4 col-md-6 col-sm-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <div class="mb-3">
+                            <img src="{{ absolute_url(asset('rocketssend-logo.png')) }}" alt="火箭邮社" style="max-width: 180px;">
+                        </div>
+                        <div class="text-muted">邮箱管理系统 · 管理员登录</div>
+                    </div>
+
+                    <form method="post">
+                        {% if error %}
+                            <div class="alert alert-danger">
+                                {{ error.messageKey|trans(error.messageData, 'security') }}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">用户名</label>
+                            <input type="text" value="{{ last_username }}" name="username" id="username" class="form-control" placeholder="请输入用户名" required autofocus>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">密码</label>
+                            <input type="password" name="password" id="password" class="form-control" placeholder="请输入密码" required>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember_me" name="_remember_me" checked>
+                            <label class="form-check-label" for="remember_me">记住我</label>
+                            <a href="#" class="float-end text-decoration-none">忘记密码?</a>
+                        </div>
+
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                        <div class="d-grid gap-2 mb-3">
+                            <button class="btn btn-primary py-2" type="submit">登录</button>
+                        </div>
+
+                        {# <div class="text-center">
+                            <p class="mb-0">还没有账号? <a href="{{ path('app_register') }}" class="text-decoration-none">立即注册</a></p>
+                        </div> #}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

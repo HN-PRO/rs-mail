@@ -1,0 +1,178 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}管理员账户 - 邮箱管理系统{% endblock %}
+
+{% block page_title %}管理员账户{% endblock %}
+
+{% block body %}
+    <!-- 搜索栏 -->
+    <div class="card search-box">
+        <div class="card-body">
+            <form method="get" action="{{ path('app_user_index') }}" class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">用户搜索</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ search_term is defined ? search_term : '' }}" placeholder="输入用户名或邮箱搜索">
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">搜索</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 用户列表 -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>管理员列表</span>
+            <button type="button" class="btn btn-primary btn-sm add-user-btn">添加管理员</button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>邮箱</th>
+                            <th>角色</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    {% if 'ROLE_ADMIN' in user.roles %}
+                                        <span class="badge bg-danger">管理员</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">普通用户</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge {{ user.status == '活跃' ? 'bg-success' : 'bg-danger' }}">
+                                        {{ user.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-edit btn-action edit-user-btn" 
+                                            data-id="{{ user.id }}" 
+                                            data-username="{{ user.username }}"
+                                            data-email="{{ user.email }}"
+                                            data-fullname="{{ user.fullName }}"
+                                            data-roles="{{ user.roles|json_encode }}">编辑</button>
+                                    {% if user.id != app.user.id %}
+                                        <form method="post" action="{{ path('app_user_delete', {'id': user.id}) }}" style="display: inline-block" onsubmit="return confirm('确定要删除这个管理员吗？');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                            <button class="btn btn-delete btn-action">删除</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">暂无用户</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户添加/编辑模态框 -->
+    <div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userModalLabel">添加管理员</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm" method="post">
+                        <input type="hidden" id="user_id" name="user_id">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">用户名 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">电子邮箱 <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">密码 <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="password" name="password">
+                            <div class="form-text" id="passwordHelp">编辑时如不修改密码请留空</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fullName" class="form-label">全名</label>
+                            <input type="text" class="form-control" id="fullName" name="fullName">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">角色</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="role_admin" name="roles[]" value="ROLE_ADMIN">
+                                <label class="form-check-label" for="role_admin">管理员</label>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化模态框
+        var userModal = new bootstrap.Modal(document.getElementById('userModal'));
+        
+        // 添加用户按钮点击事件
+        document.querySelector('.add-user-btn').addEventListener('click', function() {
+            document.getElementById('userForm').reset();
+            document.getElementById('user_id').value = '';
+            document.getElementById('userModalLabel').textContent = '添加管理员';
+            document.getElementById('password').required = true;
+            document.getElementById('passwordHelp').style.display = 'none';
+            document.getElementById('userForm').action = "{{ path('app_user_new') }}";
+            userModal.show();
+        });
+        
+        // 编辑用户按钮点击事件
+        document.querySelectorAll('.edit-user-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = this.getAttribute('data-id');
+                var username = this.getAttribute('data-username');
+                var email = this.getAttribute('data-email');
+                var fullName = this.getAttribute('data-fullname');
+                var roles = JSON.parse(this.getAttribute('data-roles'));
+                
+                document.getElementById('user_id').value = id;
+                document.getElementById('username').value = username;
+                document.getElementById('email').value = email;
+                document.getElementById('fullName').value = fullName || '';
+                document.getElementById('password').required = false;
+                document.getElementById('passwordHelp').style.display = 'block';
+                
+                // 设置角色
+                if (roles.includes('ROLE_ADMIN')) {
+                    document.getElementById('role_admin').checked = true;
+                } else {
+                    document.getElementById('role_admin').checked = false;
+                }
+                
+                document.getElementById('userModalLabel').textContent = '编辑管理员';
+                document.getElementById('userForm').action = "{{ path('app_user_edit', {'id': 'USER_ID'}) }}".replace('USER_ID', id);
+                
+                userModal.show();
+            });
+        });
+    });
+    </script>
+{% endblock %} 

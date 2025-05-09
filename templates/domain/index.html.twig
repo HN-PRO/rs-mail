@@ -1,0 +1,121 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}域名管理 - 邮箱管理系统{% endblock %}
+
+{% block page_title %}域名管理{% endblock %}
+
+{% block body %}
+    <!-- 搜索栏 -->
+    <div class="card search-box">
+        <div class="card-body">
+            <form method="get" action="{{ path('app_domain_index') }}" class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">域名搜索</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ search_term }}">
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">搜索</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 域名列表 -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>域名列表</span>
+            <button type="button" class="btn btn-primary btn-sm add-domain-btn">添加域名</button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>域名</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for domain in domains %}
+                            <tr>
+                                <td>{{ domain.id }}</td>
+                                <td>{{ domain.domain }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-edit btn-action edit-domain-btn" 
+                                            data-id="{{ domain.id }}" 
+                                            data-domain="{{ domain.domain }}">编辑</button>
+                                    <form method="post" action="{{ path('app_domain_delete', {'id': domain.id}) }}" style="display: inline-block" onsubmit="return confirm('确定要删除这个域名吗？这将同时删除该域名下的所有用户和别名！');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ domain.id) }}">
+                                        <button class="btn btn-delete btn-action">删除</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center">暂无域名</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 域名添加/编辑模态框 -->
+    <div class="modal fade" id="domainModal" tabindex="-1" aria-labelledby="domainModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="domainModalLabel">添加域名</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="domainForm" method="post">
+                        <input type="hidden" id="domain_id" name="domain_id">
+                        <div class="mb-3">
+                            <label for="domain" class="form-label">域名 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="domain" name="domain" required>
+                            <div class="form-text">请输入不带 www 前缀的域名，例如：example.com</div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化模态框
+        var domainModal = new bootstrap.Modal(document.getElementById('domainModal'));
+        
+        // 添加域名按钮点击事件
+        document.querySelector('.add-domain-btn').addEventListener('click', function() {
+            document.getElementById('domainForm').reset();
+            document.getElementById('domain_id').value = '';
+            document.getElementById('domainModalLabel').textContent = '添加域名';
+            document.getElementById('domainForm').action = "{{ path('app_domain_new') }}";
+            domainModal.show();
+        });
+        
+        // 编辑域名按钮点击事件
+        document.querySelectorAll('.edit-domain-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = this.getAttribute('data-id');
+                var domain = this.getAttribute('data-domain');
+                
+                document.getElementById('domain_id').value = id;
+                document.getElementById('domain').value = domain;
+                document.getElementById('domainModalLabel').textContent = '编辑域名';
+                document.getElementById('domainForm').action = "{{ path('app_domain_edit', {'id': 'DOMAIN_ID'}) }}".replace('DOMAIN_ID', id);
+                
+                domainModal.show();
+            });
+        });
+    });
+    </script>
+{% endblock %} 

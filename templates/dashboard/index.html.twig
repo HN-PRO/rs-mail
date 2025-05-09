@@ -1,0 +1,280 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}仪表盘 - 火箭邮社邮箱管理系统{% endblock %}
+
+{% block page_title %}火箭邮社 - 仪表盘{% endblock %}
+
+{% block body %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stat-card blue">
+            <i class="bi bi-globe"></i>
+            <div class="number">{{ active_domain_count }}</div>
+            <div>活跃域名</div>
+            <button type="button" class="btn btn-sm btn-primary mt-2 add-domain-btn">添加域名</button>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card cyan">
+            <i class="bi bi-people"></i>
+            <div class="number">{{ user_count }}</div>
+            <div>邮箱用户</div>
+            <button type="button" class="btn btn-sm btn-primary mt-2 add-user-btn">添加用户</button>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card orange">
+            <i class="bi bi-arrow-left-right"></i>
+            <div class="number">{{ alias_count }}</div>
+            <div>邮箱别名</div>
+            <button type="button" class="btn btn-sm btn-primary mt-2 add-alias-btn">添加别名</button>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>最近活动</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>操作</th>
+                        <th>详情</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_logs %}
+                        <tr>
+                            <td>{{ log.time|date('Y-m-d H:i') }}</td>
+                            <td>{{ log.operationType }}</td>
+                            <td>{{ log.details }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center py-3">暂无活动记录</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if recent_logs|length > 0 %}
+        <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted">显示最近5条记录</span>
+                <a href="{{ path('app_system_log_index') }}" class="btn btn-sm btn-primary">查看全部</a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- 弹窗模板 -->
+<!-- 域名添加/编辑模态框 -->
+<div class="modal fade" id="domainModal" tabindex="-1" aria-labelledby="domainModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="domainModalLabel">添加/编辑域名</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="domainForm" method="post">
+                    <input type="hidden" id="domain_id" name="domain_id">
+                    <div class="mb-3">
+                        <label for="domain" class="form-label">域名 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="domain" name="domain" required>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 用户添加/编辑模态框 -->
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalLabel">添加邮箱用户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm" method="post">
+                    <input type="hidden" id="user_id" name="user_id">
+                    <div class="mb-3">
+                        <label for="user_domain_id" class="form-label">选择域名 <span class="text-danger">*</span></label>
+                        <select class="form-select" id="user_domain_id" name="domain_id" required>
+                            <option value="">-- 选择域名 --</option>
+                            {% for domain in domains|default([]) %}
+                                <option value="{{ domain.id }}">{{ domain.domain }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">邮箱名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="email" name="email" required>
+                        <div class="form-text">只需要输入@前面的部分，例如想要创建 john@example.com，只需要输入 john</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码 <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <div class="form-text" id="passwordHelp">编辑时如不修改密码请留空</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quota" class="form-label">配额 (MB)</label>
+                        <input type="number" class="form-control" id="quota" name="quota" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="active" class="form-label">状态</label>
+                        <select class="form-select" id="active" name="active">
+                            <option value="1">活跃</option>
+                            <option value="0">禁用</option>
+                        </select>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 别名添加/编辑模态框 -->
+<div class="modal fade" id="aliasModal" tabindex="-1" aria-labelledby="aliasModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="aliasModalLabel">添加/编辑别名</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="aliasForm" method="post">
+                    <input type="hidden" id="alias_id" name="alias_id">
+                    <div class="mb-3">
+                        <label for="alias_domain_id" class="form-label">选择域名 <span class="text-danger">*</span></label>
+                        <select class="form-select" id="alias_domain_id" name="domain_id" required>
+                            <option value="">-- 选择域名 --</option>
+                            {% for domain in domains|default([]) %}
+                                <option value="{{ domain.id }}">{{ domain.domain }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="source" class="form-label">源地址 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="source" name="source" required>
+                        <div class="form-text">源地址应为完整的电子邮件地址，例如：username@example.com</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="destination" class="form-label">目标地址 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="destination" name="destination" required>
+                        <div class="form-text">目标地址可以是单个电子邮件地址，也可以是多个地址（用逗号分隔）</div>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化所有模态框
+    var domainModal = new bootstrap.Modal(document.getElementById('domainModal'));
+    var userModal = new bootstrap.Modal(document.getElementById('userModal'));
+    var aliasModal = new bootstrap.Modal(document.getElementById('aliasModal'));
+    
+    // 添加域名按钮点击事件
+    document.querySelectorAll('.add-domain-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.getElementById('domainForm').reset();
+            document.getElementById('domain_id').value = '';
+            document.getElementById('domainModalLabel').textContent = '添加域名';
+            document.getElementById('domainForm').action = "{{ path('app_domain_new') }}";
+            domainModal.show();
+        });
+    });
+    
+    // 添加用户按钮点击事件
+    document.querySelectorAll('.add-user-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.getElementById('userForm').reset();
+            document.getElementById('user_id').value = '';
+            document.getElementById('userModalLabel').textContent = '添加邮箱用户';
+            document.getElementById('passwordHelp').style.display = 'none';
+            document.getElementById('userForm').action = "{{ path('app_mail_user_new') }}";
+            userModal.show();
+        });
+    });
+    
+    // 添加别名按钮点击事件
+    document.querySelectorAll('.add-alias-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.getElementById('aliasForm').reset();
+            document.getElementById('alias_id').value = '';
+            document.getElementById('aliasModalLabel').textContent = '添加别名';
+            document.getElementById('aliasForm').action = "{{ path('app_alias_new') }}";
+            aliasModal.show();
+        });
+    });
+});
+</script>
+
+<style>
+.stat-card {
+    position: relative;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.stat-card.blue {
+    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+}
+
+.stat-card.cyan {
+    background: linear-gradient(135deg, #36b9cc 0%, #258391 100%);
+}
+
+.stat-card.orange {
+    background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
+}
+
+.stat-card .number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 10px 0;
+}
+
+.stat-card i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.stat-card .btn {
+    margin-top: 10px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.stat-card .btn:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+</style>
+{% endblock %} 

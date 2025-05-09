@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}编辑邮件 - 邮件管理系统{% endblock %}
+
+{% block body %}
+<div class="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>编辑邮件</h2>
+        <div>
+            <a href="{{ path('app_mail_list') }}" class="btn btn-secondary">返回列表</a>
+            <a href="{{ path('app_mail_show', {'id': mail.id}) }}" class="btn btn-info">查看详情</a>
+        </div>
+    </div>
+    
+    <div class="card shadow">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold">邮件信息</h6>
+            <span class="badge {{ mail.status == 'pending' ? 'bg-primary' : (mail.status == 'sent' ? 'bg-success' : 'bg-danger') }}">
+                {{ mail.status == 'pending' ? '待发送' : (mail.status == 'sent' ? '已发送' : '失败') }}
+            </span>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ path('app_mail_edit', {'id': mail.id}) }}">
+                <div class="mb-3">
+                    <label for="sender" class="form-label">发件人 <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="sender" name="sender" value="{{ mail.sender }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="recipient" class="form-label">收件人 <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="recipient" name="recipient" value="{{ mail.recipient }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="subject" class="form-label">主题 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="subject" name="subject" value="{{ mail.subject }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="content" class="form-label">内容</label>
+                    <textarea class="form-control" id="content" name="content" rows="10">{{ mail.content }}</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="status" class="form-label">状态 <span class="text-danger">*</span></label>
+                    <select class="form-select" id="status" name="status" required>
+                        <option value="pending" {{ mail.status == 'pending' ? 'selected' : '' }}>待发送</option>
+                        <option value="sent" {{ mail.status == 'sent' ? 'selected' : '' }}>已发送</option>
+                        <option value="failed" {{ mail.status == 'failed' ? 'selected' : '' }}>失败</option>
+                    </select>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary">保存更改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

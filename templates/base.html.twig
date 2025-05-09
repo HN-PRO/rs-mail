@@ -2,16 +2,262 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>{% block title %}Welcome!{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}火箭邮社 - 邮箱管理系统{% endblock %}</title>
+        <link rel="icon" href="{{ absolute_url(asset('rocketssend-logo.png')) }}">
         {% block stylesheets %}
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+            <link href="{{ asset('assets/styles/pagination.css') }}" rel="stylesheet">
+            <style>
+                body {
+                    font-family: 'Arial', sans-serif;
+                    background-color: #f8f9fa;
+                }
+                .sidebar {
+                    background-color: #222;
+                    color: white;
+                    min-height: 100vh;
+                }
+                .sidebar .nav-link {
+                    color: rgba(255, 255, 255, 0.7);
+                    margin-bottom: 5px;
+                    padding: 10px 15px;
+                }
+                .sidebar .nav-link:hover {
+                    color: white;
+                    background-color: rgba(255, 255, 255, 0.1);
+                }
+                .sidebar .nav-link.active {
+                    background-color: #444;
+                    color: white;
+                }
+                .sidebar .nav-link i {
+                    margin-right: 8px;
+                }
+                .main-title {
+                    font-size: 1.2rem;
+                    font-weight: bold;
+                    margin-bottom: 20px;
+                    color: white;
+                }
+                .card {
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                    margin-bottom: 20px;
+                }
+                .card-header {
+                    background-color: #fff;
+                    border-bottom: 1px solid #f0f0f0;
+                    padding: 15px 20px;
+                    font-weight: 600;
+                }
+                .btn-primary, .page-item.active .page-link {
+                    background-color: #F89406 !important;
+                    border-color: #F89406 !important;
+                }
+                .btn-primary:hover {
+                    background-color: #E08400 !important;
+                }
+                .badge-status {
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                    font-weight: 500;
+                }
+                .badge-active {
+                    background-color: #37b24d;
+                    color: white;
+                }
+                .badge-inactive {
+                    background-color: #f03e3e;
+                    color: white;
+                }
+                .stat-card {
+                    border-radius: 8px;
+                    padding: 20px;
+                    color: white;
+                    text-align: center;
+                    margin-bottom: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+                .stat-card i {
+                    font-size: 2rem;
+                    margin-bottom: 10px;
+                }
+                .stat-card .number {
+                    font-size: 2rem;
+                    font-weight: bold;
+                    margin-bottom: 5px;
+                }
+                .stat-card.blue {
+                    background-color: #F89406;
+                }
+                .stat-card.cyan {
+                    background-color: #F76B1C;
+                }
+                .stat-card.orange {
+                    background-color: #fd7e14;
+                }
+                .table th, .table td {
+                    vertical-align: middle;
+                }
+                .action-btn {
+                    padding: 4px 10px;
+                    font-size: 0.8rem;
+                    border-radius: 4px;
+                    margin-right: 5px;
+                }
+                .btn-edit {
+                    background-color: #F76B1C;
+                    color: white;
+                    border: none;
+                }
+                .btn-edit:hover {
+                    background-color: #E55A0B;
+                    color: white;
+                }
+                .btn-delete {
+                    background-color: #f03e3e;
+                    color: white;
+                    border: none;
+                }
+                .btn-delete:hover {
+                    background-color: #d03030;
+                    color: white;
+                }
+                .search-box {
+                    margin-bottom: 20px;
+                }
+                .form-control:focus, .btn:focus {
+                    box-shadow: 0 0 0 0.25rem rgba(248, 148, 6, 0.25);
+                    border-color: #F89406;
+                }
+                .page-link {
+                    color: #F89406;
+                }
+                .avatar {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background-color: #F89406;
+                    color: white;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                }
+                .logo-container {
+                    text-align: center;
+                    padding: 15px 0;
+                    margin-bottom: 15px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                }
+                .logo-image {
+                    max-width: 150px;
+                    height: auto;
+                }
+            </style>
         {% endblock %}
 
         {% block javascripts %}
-            {% block importmap %}{{ importmap('app') }}{% endblock %}
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         {% endblock %}
     </head>
     <body>
-        {% block body %}{% endblock %}
+        {% if app.user %}
+            <div class="container-fluid">
+                <div class="row">
+                    <!-- 侧边栏 -->
+                    <div class="col-lg-2 col-md-3 sidebar p-3">
+                        <div class="logo-container">
+                            <a href="{{ path('app_dashboard') }}">
+                                <img src="{{ absolute_url(asset('rocketssend-logo.png')) }}" alt="火箭邮社" class="logo-image">
+                            </a>
+                        </div>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if app.request.get('_route') == 'app_dashboard' %}active{% endif %}" href="{{ path('app_dashboard') }}">
+                                    <i class="bi bi-speedometer2"></i> 仪表盘
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if app.request.get('_route') starts with 'app_domain' %}active{% endif %}" href="{{ path('app_domain_index') }}">
+                                    <i class="bi bi-globe"></i> 域名管理
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if app.request.get('_route') starts with 'app_mail_user' %}active{% endif %}" href="{{ path('app_mail_user_index') }}">
+                                    <i class="bi bi-envelope"></i> 邮箱用户
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if app.request.get('_route') starts with 'app_user' %}active{% endif %}" href="{{ path('app_user_index') }}">
+                                    <i class="bi bi-people"></i> 用户管理
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if app.request.get('_route') starts with 'app_alias' %}active{% endif %}" href="{{ path('app_alias_index') }}">
+                                    <i class="bi bi-arrow-left-right"></i> 别名管理
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if app.request.get('_route') starts with 'app_mail_server_config' %}active{% endif %}" href="{{ path('app_mail_server_config_index') }}">
+                                    <i class="bi bi-server"></i> 邮箱服务器配置
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if app.request.get('_route') starts with 'app_system_log' %}active{% endif %}" href="{{ path('app_system_log_index') }}">
+                                    <i class="bi bi-clock-history"></i> 系统日志
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 主内容区 -->
+                    <div class="col-lg-10 col-md-9 p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4>{% block page_title %}{% endblock %}</h4>
+                            <div class="d-flex align-items-center">
+                                <div class="dropdown">
+                                    <button class="btn btn-link text-decoration-none dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <div class="avatar">
+                                            {{ app.user.username|slice(0, 1)|upper }}
+                                        </div>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                                        <li><span class="dropdown-item-text">{{ app.user.username }}</span></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ path('app_logout') }}">退出登录</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 提示信息 -->
+                        {% for label, messages in app.flashes %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ label == 'error' ? 'danger' : label }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                        
+                        {% block body %}{% endblock %}
+                        
+                        <footer class="mt-5 text-center text-muted">
+                            <div class="py-3">
+                                <p>© {{ "now"|date("Y") }} <strong>火箭邮社</strong> (RocketsSend.com) 版权所有</p>
+                                <p class="small mb-0">安全邮件传输解决方案提供商</p>
+                            </div>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            {% block auth_content %}{% endblock %}
+        {% endif %}
     </body>
 </html>

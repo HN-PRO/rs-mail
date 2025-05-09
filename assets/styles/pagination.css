@@ -1,0 +1,64 @@
+/* 分页样式 */
+.pagination-rounded .page-link {
+    border-radius: 50%;
+    margin: 0 3px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    border: 1px solid #e9ecef;
+    color: #4e73df;
+}
+
+.pagination-rounded .page-item:first-child .page-link,
+.pagination-rounded .page-item:last-child .page-link {
+    border-radius: 50%;
+}
+
+.pagination-rounded .page-item.active .page-link {
+    background-color: #4e73df;
+    border-color: #4e73df;
+    color: white;
+    box-shadow: 0 2px 5px rgba(78, 115, 223, 0.3);
+    transform: scale(1.1);
+    z-index: 3;
+}
+
+.pagination-rounded .page-link:hover {
+    background-color: #f8f9fa;
+    border-color: #4e73df;
+    color: #4e73df;
+    transform: scale(1.1);
+    box-shadow: 0 2px 5px rgba(78, 115, 223, 0.15);
+    z-index: 2;
+}
+
+.pagination-rounded .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #e9ecef;
+}
+
+.pagination-rounded .page-item.active .page-link:hover {
+    background-color: #4e73df;
+    color: white;
+}
+
+.pagination-container {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+
+.pagination-container:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* 分页信息文本样式 */
+.pagination-container .text-muted {
+    font-size: 0.875rem;
+    color: #6c757d;
+} 

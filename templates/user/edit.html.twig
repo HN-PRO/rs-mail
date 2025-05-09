@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}编辑管理员 - 邮箱管理系统{% endblock %}
+
+{% block page_title %}编辑管理员{% endblock %}
+
+{% block body %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>编辑管理员</span>
+            <a href="{{ path('app_user_index') }}" class="btn btn-secondary btn-sm">返回列表</a>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ path('app_user_edit', {'id': user.id}) }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label">用户名 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="username" name="username" required value="{{ user.username }}">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="email" class="form-label">电子邮箱 <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="email" name="email" required value="{{ user.email }}">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">密码</label>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="留空表示不修改">
+                    <div class="form-text">如果不需要修改密码，请留空</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="fullName" class="form-label">全名</label>
+                    <input type="text" class="form-control" id="fullName" name="fullName" value="{{ user.fullName }}">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">角色</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="role_admin" name="roles[]" value="ROLE_ADMIN" {% if 'ROLE_ADMIN' in user.roles %}checked{% endif %}>
+                        <label class="form-check-label" for="role_admin">
+                            管理员
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="status" class="form-label">状态 <span class="text-danger">*</span></label>
+                    <select class="form-select" id="status" name="status" required>
+                        <option value="活跃" {% if user.status == '活跃' %}selected{% endif %}>活跃</option>
+                        <option value="禁用" {% if user.status == '禁用' %}selected{% endif %}>禁用</option>
+                    </select>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary">保存更改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %} 

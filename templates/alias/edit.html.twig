@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}编辑别名 - 邮箱管理系统{% endblock %}
+
+{% block page_title %}编辑别名{% endblock %}
+
+{% block body %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>编辑别名</span>
+            <a href="{{ path('app_alias_index') }}" class="btn btn-secondary btn-sm">返回列表</a>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ path('app_alias_edit', {'id': alias.id}) }}">
+                <div class="mb-3">
+                    <label for="domain_id" class="form-label">域名 <span class="text-danger">*</span></label>
+                    <select class="form-select" id="domain_id" name="domain_id" required>
+                        <option value="">-- 选择域名 --</option>
+                        {% for domain in domains|default([]) %}
+                            <option value="{{ domain.id }}" {% if alias.domain and alias.domain.id == domain.id %}selected{% endif %}>{{ domain.domain }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="source" class="form-label">源地址 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="source" name="source" required value="{{ alias.source }}">
+                    <div class="form-text">源地址应为完整的电子邮件地址，例如：username@example.com</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="destination" class="form-label">目标地址 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="destination" name="destination" required value="{{ alias.destination }}">
+                    <div class="form-text">目标地址可以是单个电子邮件地址，也可以是多个地址（用逗号分隔）</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="status" class="form-label">状态 <span class="text-danger">*</span></label>
+                    <select class="form-select" id="status" name="status" required>
+                        <option value="活跃" {% if alias.status == '活跃' %}selected{% endif %}>活跃</option>
+                        <option value="禁用" {% if alias.status == '禁用' %}selected{% endif %}>禁用</option>
+                    </select>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary">保存更改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %} 

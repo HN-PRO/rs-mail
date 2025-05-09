@@ -1,0 +1,80 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}IMAP连接测试{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>IMAP连接测试</h1>
+            <p class="text-muted">用于测试IMAP连接和邮箱密码验证</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ path('app_mail_user_index') }}" class="btn btn-secondary">返回用户列表</a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            选择邮箱账户并输入原始密码
+        </div>
+        <div class="card-body">
+            <form method="get" action="{{ path('app_imap_test') }}">
+                <div class="mb-3">
+                    <label for="mail_id" class="form-label">选择邮箱账户</label>
+                    <select class="form-select" id="mail_id" name="mail_id" required>
+                        <option value="">-- 选择邮箱 --</option>
+                        {% for mail_user in mail_users %}
+                            <option value="{{ mail_user.id }}" {% if mail and mail.id == mail_user.id %}selected{% endif %}>
+                                {{ mail_user.getFullEmail() }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">原始密码</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                    <div class="form-text">注意：此处需要输入原始密码，而非密码哈希值</div>
+                </div>
+                
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">测试连接</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if mail and (result or error) %}
+        <div class="card">
+            <div class="card-header">
+                测试结果 - {{ mail.getFullEmail() }}
+            </div>
+            <div class="card-body">
+                {% if error %}
+                    <div class="alert alert-danger">
+                        <strong>连接失败:</strong> {{ error }}
+                    </div>
+                {% elseif result %}
+                    <div class="alert alert-success">
+                        <strong>连接成功!</strong> 成功连接到 {{ result.server }}
+                    </div>
+                    
+                    <h5>连接详情:</h5>
+                    <ul>
+                        <li><strong>服务器:</strong> {{ result.server }}</li>
+                        <li><strong>用户名:</strong> {{ result.username }}</li>
+                    </ul>
+                    
+                    <h5>邮箱文件夹:</h5>
+                    <ul>
+                        {% for folder in result.folders %}
+                            <li>{{ folder }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

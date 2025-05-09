@@ -1,0 +1,116 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}邮箱服务器配置管理{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>邮箱服务器配置管理</h1>
+            <p class="text-muted">管理各类邮箱的IMAP服务器连接配置</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ path('app_mail_user_index') }}" class="btn btn-secondary me-2">返回邮箱用户</a>
+            <a href="{{ path('app_mail_server_config_new') }}" class="btn btn-primary">添加配置</a>
+            <form method="post" action="{{ path('app_mail_server_config_init_default') }}" style="display: inline-block;" onsubmit="return confirm('确定要初始化默认配置吗？');">
+                <input type="hidden" name="_token" value="{{ csrf_token('init_default') }}">
+                <button class="btn btn-success">初始化默认配置</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            邮箱服务器配置列表
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>域名模式</th>
+                            <th>服务器主机</th>
+                            <th>端口</th>
+                            <th>加密</th>
+                            <th>验证证书</th>
+                            <th>使用完整邮箱</th>
+                            <th>状态</th>
+                            <th>描述</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for config in configs %}
+                            <tr>
+                                <td>{{ config.id }}</td>
+                                <td>{{ config.domainPattern }}</td>
+                                <td>{{ config.host }}</td>
+                                <td>{{ config.port }}</td>
+                                <td>{{ config.encryption }}</td>
+                                <td>
+                                    <span class="badge {{ config.validateCert ? 'bg-success' : 'bg-warning' }}">
+                                        {{ config.validateCert ? '是' : '否' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {{ config.useFullEmail ? 'bg-success' : 'bg-warning' }}">
+                                        {{ config.useFullEmail ? '是' : '否' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {{ config.isActive ? 'bg-success' : 'bg-danger' }}">
+                                        {{ config.isActive ? '活跃' : '禁用' }}
+                                    </span>
+                                </td>
+                                <td>{{ config.description }}</td>
+                                <td>
+                                    <a href="{{ path('app_mail_server_config_edit', {'id': config.id}) }}" class="btn btn-sm btn-primary">编辑</a>
+                                    <form method="post" action="{{ path('app_mail_server_config_delete', {'id': config.id}) }}" style="display: inline-block;" onsubmit="return confirm('确定要删除此配置吗？');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ config.id) }}">
+                                        <button class="btn btn-sm btn-danger">删除</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="10" class="text-center">暂无配置，点击"初始化默认配置"按钮添加预设配置</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            配置参数说明
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">域名模式</dt>
+                <dd class="col-sm-9">邮箱域名的匹配模式，例如：gmail.com、163.com等。系统会根据此模式匹配邮箱的域名部分。</dd>
+                
+                <dt class="col-sm-3">服务器主机</dt>
+                <dd class="col-sm-9">IMAP服务器的主机地址，例如：imap.gmail.com</dd>
+                
+                <dt class="col-sm-3">端口</dt>
+                <dd class="col-sm-9">IMAP服务器的端口，通常SSL加密使用993端口</dd>
+                
+                <dt class="col-sm-3">加密</dt>
+                <dd class="col-sm-9">连接加密类型，常见值：ssl、tls、notls</dd>
+                
+                <dt class="col-sm-3">验证证书</dt>
+                <dd class="col-sm-9">是否验证服务器的SSL证书，如果服务器使用自签名证书，可以设置为否</dd>
+                
+                <dt class="col-sm-3">使用完整邮箱</dt>
+                <dd class="col-sm-9">登录时是否使用完整邮箱作为用户名。是=使用完整邮箱（如：user@example.com），否=只使用@前的用户名部分（如：user）</dd>
+                
+                <dt class="col-sm-3">状态</dt>
+                <dd class="col-sm-9">是否启用此配置</dd>
+            </dl>
+        </div>
+    </div>
+</div>
+{% endblock %} 

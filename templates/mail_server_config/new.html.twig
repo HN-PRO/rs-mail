@@ -1,0 +1,84 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}添加邮箱服务器配置{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>添加邮箱服务器配置</h1>
+            <p class="text-muted">添加新的邮箱IMAP服务器连接配置</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ path('app_mail_server_config_index') }}" class="btn btn-secondary">返回列表</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" action="{{ path('app_mail_server_config_new') }}">
+                <div class="mb-3">
+                    <label for="domain_pattern" class="form-label">域名模式 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="domain_pattern" name="domain_pattern" required>
+                    <div class="form-text">邮箱域名的匹配模式，例如：gmail.com、163.com等</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="host" class="form-label">服务器主机 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="host" name="host" required>
+                    <div class="form-text">IMAP服务器的主机地址，例如：imap.gmail.com</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="port" class="form-label">端口 <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" id="port" name="port" value="993" required>
+                    <div class="form-text">IMAP服务器的端口，通常SSL加密使用993端口</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="encryption" class="form-label">加密 <span class="text-danger">*</span></label>
+                    <select class="form-select" id="encryption" name="encryption" required>
+                        <option value="ssl">SSL</option>
+                        <option value="tls">TLS</option>
+                        <option value="starttls">STARTTLS</option>
+                        <option value="notls">无加密</option>
+                    </select>
+                    <div class="form-text">连接加密类型</div>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="hidden" name="validate_cert" value="0">
+                    <input type="checkbox" class="form-check-input" id="validate_cert" name="validate_cert" value="1" checked>
+                    <label class="form-check-label" for="validate_cert">验证证书</label>
+                    <div class="form-text">是否验证服务器的SSL证书，如果服务器使用自签名证书，可以取消勾选</div>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="hidden" name="use_full_email" value="0">
+                    <input type="checkbox" class="form-check-input" id="use_full_email" name="use_full_email" value="1" checked>
+                    <label class="form-check-label" for="use_full_email">使用完整邮箱</label>
+                    <div class="form-text">登录时是否使用完整邮箱作为用户名</div>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="hidden" name="is_active" value="0">
+                    <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1" checked>
+                    <label class="form-check-label" for="is_active">启用</label>
+                    <div class="form-text">是否启用此配置</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="description" class="form-label">描述</label>
+                    <input type="text" class="form-control" id="description" name="description">
+                    <div class="form-text">配置的简要描述，例如：Gmail邮箱服务器</div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ path('app_mail_server_config_index') }}" class="btn btn-secondary me-2">取消</a>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

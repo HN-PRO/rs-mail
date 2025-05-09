@@ -1,0 +1,572 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}邮箱用户管理 - 邮箱管理系统{% endblock %}
+
+{% block page_title %}邮箱用户管理{% endblock %}
+
+{% block body %}
+    <!-- 搜索栏 -->
+    <div class="card search-box">
+        <div class="card-body">
+            <form method="get" action="{{ path('app_mail_user_index') }}" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">用户搜索</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ search_term is defined ? search_term : '' }}" placeholder="输入邮箱地址搜索">
+                </div>
+                <div class="col-md-4">
+                    <label for="domain" class="form-label">域名筛选</label>
+                    <select class="form-select" id="domain" name="domain">
+                        <option value="所有域名">所有域名</option>
+                        {% for domain in domains %}
+                            <option value="{{ domain.domain }}" {{ domain_filter is defined and domain_filter == domain.domain ? 'selected' : '' }}>{{ domain.domain }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">搜索</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 用户列表 -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>邮箱用户列表</span>
+            <div>
+                <button type="button" class="btn btn-secondary btn-sm export-csv-btn me-2">导出CSV</button>
+                <button type="button" class="btn btn-danger btn-sm batch-delete-mail-user-btn me-2">批量删除邮箱用户</button>
+                <button type="button" class="btn btn-success btn-sm batch-mail-user-btn me-2">批量添加邮箱用户</button>
+                <button type="button" class="btn btn-primary btn-sm add-mail-user-btn">添加邮箱用户</button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>域名</th>
+                            <th>完整邮箱</th>
+                            <th>配额</th>
+                            <th>创建时间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.domain.domain }}</td>
+                                <td>{{ user.email }}@{{ user.domain.domain }}</td>
+                                <td>{{ user.quota|default(0) }} MB</td>
+                                <td>{{ user.createdAt|date('Y-m-d H:i:s') }}</td>
+                                <td>
+                                    <span class="badge {{ user.status == '活跃' ? 'bg-success' : 'bg-danger' }}">
+                                        {{ user.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-edit btn-action edit-mail-user-btn" 
+                                            data-id="{{ user.id }}" 
+                                            data-email="{{ user.email }}"
+                                            data-domain-id="{{ user.domain.id }}"
+                                            data-quota="{{ user.quota|default(0) }}"
+                                            data-status="{{ user.status }}">编辑</button>
+                                    <a href="{{ path('app_mail_user_tokens', {'id': user.id}) }}" class="btn btn-info btn-action">API令牌</a>
+                                    <form method="post" action="{{ path('app_mail_user_delete', {'id': user.id}) }}" style="display: inline-block" onsubmit="return confirm('确定要删除这个邮箱用户吗？');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                        <button class="btn btn-delete btn-action">删除</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center">暂无邮箱用户</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="pagination justify-content-center">
+                {{ knp_pagination_render(users) }}
+            </div>
+        </div>
+    </div>
+
+    <!-- 邮箱用户添加/编辑模态框 -->
+    <div class="modal fade" id="mailUserModal" tabindex="-1" aria-labelledby="mailUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mailUserModalLabel">添加邮箱用户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="mailUserForm" method="post">
+                        <input type="hidden" id="mail_user_id" name="mail_user_id">
+                        <div class="mb-3">
+                            <label for="domain_id" class="form-label">选择域名 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="domain_id" name="domain_id" required>
+                                <option value="">-- 选择域名 --</option>
+                                {% for domain in domains %}
+                                    <option value="{{ domain.id }}">{{ domain.domain }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">邮箱用户名 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="email" name="email" required>
+                                <span class="input-group-text">@</span>
+                                <span class="input-group-text" id="domain-display">域名</span>
+                            </div>
+                            <div class="form-text">不需要包含@和域名部分，只需要填写用户名部分</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">密码 <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="password" name="password">
+                            <div class="form-text" id="passwordHelp">编辑时如不修改密码请留空</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quota" class="form-label">邮箱配额 (MB)</label>
+                            <input type="number" class="form-control" id="quota" name="quota" min="0" value="0">
+                            <div class="form-text">设置邮箱存储空间大小，0表示不限制</div>
+                        </div>
+                        <div class="mb-3" id="statusGroup">
+                            <label for="active" class="form-label">状态</label>
+                            <select class="form-select" id="active" name="active">
+                                <option value="1">活跃</option>
+                                <option value="0">禁用</option>
+                            </select>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量添加邮箱用户模态框 -->
+    <div class="modal fade" id="batchMailUserModal" tabindex="-1" aria-labelledby="batchMailUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="batchMailUserModalLabel">批量添加邮箱用户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="batchMailUserForm" method="post" action="{{ path('app_mail_user_batch_create') }}">
+                        <div class="mb-3">
+                            <label for="batch_domain_id" class="form-label">选择域名 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="batch_domain_id" name="domain_id" required>
+                                <option value="">-- 选择域名 --</option>
+                                {% for domain in domains %}
+                                    <option value="{{ domain.id }}">{{ domain.domain }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="prefix" class="form-label">用户名前缀</label>
+                            <input type="text" class="form-control" id="prefix" name="prefix" placeholder="可选的用户名前缀">
+                            <div class="form-text">例如：如果填写"user"，生成的邮箱可能为 user123@域名</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="name_length" class="form-label">随机部分长度 <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="name_length" name="name_length" value="8" min="4" max="16" required>
+                            <div class="form-text">生成的随机字符数量，建议4-16位</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="count" class="form-label">生成数量 <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="count" name="count" value="10" min="1" max="2000" required>
+                            <div class="form-text">一次最多可生成2000个账户</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="use_random_password" name="use_random_password" value="1">
+                                <label class="form-check-label" for="use_random_password">
+                                    使用随机密码
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="password_field">
+                            <label for="batch_password" class="form-label">固定密码 <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="batch_password" name="password" required>
+                            <div class="form-text">如不使用随机密码，所有账户将使用相同的密码</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="batch_quota" class="form-label">邮箱配额 (MB)</label>
+                            <input type="number" class="form-control" id="batch_quota" name="quota" min="0" value="0">
+                            <div class="form-text">设置邮箱存储空间大小，0表示不限制</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="use_high_performance" name="use_high_performance" value="1">
+                                <label class="form-check-label" for="use_high_performance">
+                                    使用高性能模式
+                                </label>
+                                <div class="form-text text-warning">推荐在创建大量用户(500+)时启用，将直接使用SQL批量插入</div>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">批量创建</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量删除邮箱用户模态框 -->
+    <div class="modal fade" id="batchDeleteMailUserModal" tabindex="-1" aria-labelledby="batchDeleteMailUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="batchDeleteMailUserModalLabel">批量删除邮箱用户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="batchDeleteMailUserForm" method="post" action="{{ path('app_mail_user_batch_delete') }}" onsubmit="return confirmBatchDelete()">
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill"></i> 警告：批量删除操作不可恢复，请谨慎使用！
+                        </div>
+                        <div class="mb-3">
+                            <label for="batch_delete_search" class="form-label">按邮箱筛选</label>
+                            <input type="text" class="form-control" id="batch_delete_search" name="search" placeholder="输入邮箱包含的文字进行筛选">
+                            <div class="form-text">例如：输入 "test" 将筛选所有包含 "test" 的邮箱</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="batch_delete_domain_id" class="form-label">按域名筛选</label>
+                            <select class="form-select" id="batch_delete_domain_id" name="domain_id">
+                                <option value="">-- 选择域名 --</option>
+                                {% for domain in domains %}
+                                    <option value="{{ domain.id }}">{{ domain.domain }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="batch_delete_status" class="form-label">按状态筛选</label>
+                            <select class="form-select" id="batch_delete_status" name="status">
+                                <option value="">-- 选择状态 --</option>
+                                <option value="活跃">活跃</option>
+                                <option value="禁用">禁用</option>
+                            </select>
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="bi bi-info-circle-fill"></i> 至少需要填写一个筛选条件。匹配的所有用户将被删除！
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-danger">批量删除</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 账户创建结果模态框 -->
+    <div class="modal fade" id="createdAccountsModal" tabindex="-1" aria-labelledby="createdAccountsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createdAccountsModalLabel">创建成功 - 账户信息</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> 请立即保存这些信息！关闭此窗口后，您将无法再次查看这些密码。
+                    </div>
+                    <div id="partial-results-notice" class="alert alert-info" style="display: none;">
+                        <i class="bi bi-info-circle"></i> 由于创建的账户数量过多，此处仅显示前100个账户。
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="created-accounts-table">
+                            <thead>
+                                <tr>
+                                    <th>邮箱地址</th>
+                                    <th>密码</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 将通过JavaScript填充 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="copy-accounts-btn">复制为CSV</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导出CSV模态框 -->
+    <div class="modal fade" id="exportCsvModal" tabindex="-1" aria-labelledby="exportCsvModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exportCsvModalLabel">导出邮箱用户CSV</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="exportCsvForm" method="get" action="{{ path('app_mail_user_export_csv') }}" target="_blank">
+                        <div class="mb-3">
+                            <label for="export_search" class="form-label">按邮箱筛选</label>
+                            <input type="text" class="form-control" id="export_search" name="search" placeholder="输入邮箱包含的文字进行筛选">
+                        </div>
+                        <div class="mb-3">
+                            <label for="export_domain" class="form-label">按域名筛选</label>
+                            <select class="form-select" id="export_domain" name="domain">
+                                <option value="所有域名">所有域名</option>
+                                {% for domain in domains %}
+                                    <option value="{{ domain.domain }}">{{ domain.domain }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="export_status" class="form-label">按状态筛选</label>
+                            <select class="form-select" id="export_status" name="status">
+                                <option value="">所有状态</option>
+                                <option value="活跃">活跃</option>
+                                <option value="禁用">禁用</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">开始日期</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date">
+                            <div class="form-text">筛选在此日期及之后创建的账户</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">结束日期</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date">
+                            <div class="form-text">筛选在此日期及之前创建的账户</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="include_passwords" name="include_passwords" value="1">
+                                <label class="form-check-label" for="include_passwords">
+                                    包含密码哈希值
+                                </label>
+                                <div class="form-text text-warning">注意：导出的密码是加密哈希值，无法直接使用</div>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">导出CSV</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化模态框
+        var mailUserModal = new bootstrap.Modal(document.getElementById('mailUserModal'));
+        var batchMailUserModal = new bootstrap.Modal(document.getElementById('batchMailUserModal'));
+        var batchDeleteMailUserModal = new bootstrap.Modal(document.getElementById('batchDeleteMailUserModal'));
+        var exportCsvModal = new bootstrap.Modal(document.getElementById('exportCsvModal'));
+        
+        // 检查是否有创建的账户信息
+        {% if app.session.get('created_emails') is not empty %}
+            showCreatedAccounts({{ app.session.get('created_emails')|json_encode|raw }}, {{ app.session.get('total_created_count')|default(0) }});
+            // 清除会话中的数据
+            {% do app.session.remove('created_emails') %}
+            {% do app.session.remove('total_created_count') %}
+        {% endif %}
+        
+        // 添加邮箱用户按钮点击事件
+        document.querySelector('.add-mail-user-btn').addEventListener('click', function() {
+            document.getElementById('mailUserForm').reset();
+            document.getElementById('mail_user_id').value = '';
+            document.getElementById('mailUserModalLabel').textContent = '添加邮箱用户';
+            document.getElementById('password').required = true;
+            document.getElementById('passwordHelp').style.display = 'none';
+            document.getElementById('statusGroup').style.display = 'none';  // 添加时不显示状态选择
+            document.getElementById('mailUserForm').action = "{{ path('app_mail_user_new') }}";
+            mailUserModal.show();
+        });
+        
+        // 批量添加邮箱用户按钮点击事件
+        document.querySelector('.batch-mail-user-btn').addEventListener('click', function() {
+            document.getElementById('batchMailUserForm').reset();
+            batchMailUserModal.show();
+        });
+        
+        // 批量删除邮箱用户按钮点击事件
+        document.querySelector('.batch-delete-mail-user-btn').addEventListener('click', function() {
+            document.getElementById('batchDeleteMailUserForm').reset();
+            batchDeleteMailUserModal.show();
+        });
+        
+        // 导出CSV按钮点击事件
+        document.querySelector('.export-csv-btn').addEventListener('click', function() {
+            document.getElementById('exportCsvForm').reset();
+            exportCsvModal.show();
+        });
+        
+        // 高性能模式切换事件
+        document.getElementById('use_high_performance').addEventListener('change', function() {
+            var form = document.getElementById('batchMailUserForm');
+            if (this.checked) {
+                form.action = "{{ path('app_mail_user_batch_create_direct') }}";
+            } else {
+                form.action = "{{ path('app_mail_user_batch_create') }}";
+            }
+        });
+        
+        // 随机密码选项切换
+        document.getElementById('use_random_password').addEventListener('change', function() {
+            var passwordField = document.getElementById('password_field');
+            var batchPassword = document.getElementById('batch_password');
+            
+            if (this.checked) {
+                passwordField.style.display = 'none';
+                batchPassword.required = false;
+            } else {
+                passwordField.style.display = 'block';
+                batchPassword.required = true;
+            }
+        });
+        
+        // 编辑邮箱用户按钮点击事件
+        document.querySelectorAll('.edit-mail-user-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = this.getAttribute('data-id');
+                var email = this.getAttribute('data-email');
+                var domainId = this.getAttribute('data-domain-id');
+                var quota = this.getAttribute('data-quota');
+                var status = this.getAttribute('data-status');
+                
+                document.getElementById('mail_user_id').value = id;
+                document.getElementById('email').value = email;
+                document.getElementById('domain_id').value = domainId;
+                document.getElementById('quota').value = quota;
+                document.getElementById('password').required = false;
+                document.getElementById('passwordHelp').style.display = 'block';
+                document.getElementById('statusGroup').style.display = 'block';  // 编辑时显示状态选择
+                
+                // 设置状态
+                if (status === '活跃') {
+                    document.getElementById('active').value = '1';
+                } else {
+                    document.getElementById('active').value = '0';
+                }
+                
+                document.getElementById('mailUserModalLabel').textContent = '编辑邮箱用户';
+                document.getElementById('mailUserForm').action = "{{ path('app_mail_user_edit', {'id': 'MAIL_USER_ID'}) }}".replace('MAIL_USER_ID', id);
+                
+                // 更新域名显示
+                updateDomainDisplay();
+                
+                mailUserModal.show();
+            });
+        });
+        
+        // 域名选择变化时更新显示
+        document.getElementById('domain_id').addEventListener('change', function() {
+            updateDomainDisplay();
+        });
+        
+        // 更新域名显示的函数
+        function updateDomainDisplay() {
+            var domainSelect = document.getElementById('domain_id');
+            var domainDisplay = document.getElementById('domain-display');
+            
+            if (domainSelect.value) {
+                var selectedOption = domainSelect.options[domainSelect.selectedIndex];
+                domainDisplay.textContent = selectedOption.text;
+            } else {
+                domainDisplay.textContent = '域名';
+            }
+        }
+        
+        // 复制账户信息为CSV
+        document.getElementById('copy-accounts-btn').addEventListener('click', function() {
+            var rows = document.querySelectorAll('#created-accounts-table tbody tr');
+            var csvContent = "邮箱地址,密码\n";
+            
+            rows.forEach(function(row) {
+                var email = row.querySelector('td:first-child').textContent;
+                var password = row.querySelector('td:last-child').textContent;
+                csvContent += email + "," + password + "\n";
+            });
+            
+            navigator.clipboard.writeText(csvContent).then(function() {
+                alert('账户信息已复制到剪贴板');
+            });
+        });
+        
+        // 显示创建的账户信息
+        function showCreatedAccounts(accounts, totalCount) {
+            var tbody = document.querySelector('#created-accounts-table tbody');
+            tbody.innerHTML = '';
+            
+            accounts.forEach(function(account) {
+                var row = document.createElement('tr');
+                
+                var emailCell = document.createElement('td');
+                emailCell.textContent = account.email;
+                row.appendChild(emailCell);
+                
+                var passwordCell = document.createElement('td');
+                passwordCell.textContent = account.password;
+                row.appendChild(passwordCell);
+                
+                tbody.appendChild(row);
+            });
+            
+            // 显示部分结果提示
+            if (totalCount > accounts.length) {
+                document.getElementById('partial-results-notice').style.display = 'block';
+                document.getElementById('partial-results-notice').innerHTML = 
+                    '<i class="bi bi-info-circle"></i> 由于创建的账户数量过多，此处仅显示前' + 
+                    accounts.length + '个账户，共创建了' + totalCount + '个账户。';
+            } else {
+                document.getElementById('partial-results-notice').style.display = 'none';
+            }
+            
+            createdAccountsModal.show();
+        }
+        
+        // 批量删除确认对话框
+        window.confirmBatchDelete = function() {
+            var searchField = document.getElementById('batch_delete_search').value;
+            var domainId = document.getElementById('batch_delete_domain_id').value;
+            var status = document.getElementById('batch_delete_status').value;
+            
+            // 检查是否至少有一个筛选条件
+            if (!searchField && !domainId && !status) {
+                alert('请至少选择一个筛选条件!');
+                return false;
+            }
+            
+            // 构建确认消息
+            var confirmMessage = '您确定要批量删除所有匹配以下条件的邮箱用户吗？\n\n';
+            if (searchField) confirmMessage += '- 邮箱包含: ' + searchField + '\n';
+            if (domainId) {
+                var domainSelect = document.getElementById('batch_delete_domain_id');
+                var domainText = domainSelect.options[domainSelect.selectedIndex].text;
+                confirmMessage += '- 域名: ' + domainText + '\n';
+            }
+            if (status) confirmMessage += '- 状态: ' + status + '\n';
+            
+            confirmMessage += '\n此操作不可恢复!';
+            
+            return confirm(confirmMessage);
+        };
+    });
+    </script>
+{% endblock %} 

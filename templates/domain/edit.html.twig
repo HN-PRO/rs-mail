@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}编辑域名 - 邮箱管理系统{% endblock %}
+
+{% block page_title %}编辑域名{% endblock %}
+
+{% block body %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>编辑域名</span>
+            <a href="{{ path('app_domain_index') }}" class="btn btn-secondary btn-sm">返回列表</a>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ path('app_domain_edit', {'id': domain.id}) }}">
+                <div class="mb-3">
+                    <label for="domain" class="form-label">域名 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="domain" name="domain" required value="{{ domain.domain }}">
+                    <div class="form-text">请输入不带 www 前缀的域名，例如：example.com</div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary">保存更改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %} 

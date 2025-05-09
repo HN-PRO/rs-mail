@@ -1,0 +1,168 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}API令牌管理 - {{ mail.getFullEmail() }}{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>API令牌管理 - {{ mail.getFullEmail() }}</h1>
+            <p class="text-muted">用于通过API获取邮件的令牌列表</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ path('app_mail_user_index') }}" class="btn btn-secondary">返回</a>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#generateTokenModal">
+                生成新令牌
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>令牌</th>
+                        <th>创建时间</th>
+                        <th>过期时间</th>
+                        <th>状态</th>
+                        <th>API地址示例</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for token in tokens %}
+                    <tr>
+                        <td>
+                            <code class="user-select-all">{{ token.token }}</code>
+                        </td>
+                        <td>{{ token.createdAt|date('Y-m-d H:i:s') }}</td>
+                        <td>
+                            {% if token.expiresAt %}
+                                {{ token.expiresAt|date('Y-m-d H:i:s') }}
+                            {% else %}
+                                永不过期
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if token.expiresAt and token.expiresAt < date() %}
+                                <span class="badge bg-danger">已过期</span>
+                            {% else %}
+                                <span class="badge bg-success">有效</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>
+                                <code class="user-select-all">{{ app.request.schemeAndHttpHost }}/api/mail/latest?token={{ token.token }}</code>
+                            </small>
+                        </td>
+                        <td>
+                            <form method="post" action="{{ path('app_api_token_delete', {'id': token.id}) }}" onsubmit="return confirm('确定要删除此令牌吗？');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete-token' ~ token.id) }}">
+                                <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">暂无API令牌</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            API使用说明
+        </div>
+        <div class="card-body">
+            <h5>1. 获取最新邮件</h5>
+            <p>请求URL: <code>{{ app.request.schemeAndHttpHost }}/api/mail/latest?token=您的令牌&password=邮箱原始密码</code></p>
+            <p>请求方法: GET</p>
+            <p>请求参数:</p>
+            <ul>
+                <li><code>token</code>: 必填，API令牌</li>
+                <li><code>password</code>: <strong>必填</strong>，邮箱的原始密码（明文），用于IMAP连接</li>
+            </ul>
+            <p>返回格式:</p>
+            <pre><code>{
+  "code": 200,
+  "success": true,
+  "msg": "操作成功",
+  "data": {
+    "recipientsName": "wangjingen163@163.com",
+    "recipientsTo": ["wangjingen163@163.com"],
+    "subject": "你好Daen",
+    "sentDate": "2024-04-25 22:33:17",
+    "fromEmail": "1330166564@qq.com",
+    "content": "这是一封测试邮件，如果你能收到，说明一切正常"
+  },
+  "timestamp": 1714055743673
+}</code></pre>
+
+            <h5 class="mt-3">2. 获取多封邮件</h5>
+            <p>请求URL: <code>{{ app.request.schemeAndHttpHost }}/api/mail/list?token=您的令牌&password=邮箱原始密码&limit=10</code></p>
+            <p>请求方法: GET</p>
+            <p>请求参数:</p>
+            <ul>
+                <li><code>token</code>: 必填，API令牌</li>
+                <li><code>password</code>: <strong>必填</strong>，邮箱的原始密码（明文），用于IMAP连接</li>
+                <li><code>limit</code>: 可选，邮件数量，默认为10，最大为50</li>
+            </ul>
+            <p>返回格式:</p>
+            <pre><code>{
+  "code": 200,
+  "success": true,
+  "msg": "操作成功",
+  "data": [
+    {
+      "recipientsName": "wangjingen163@163.com",
+      "recipientsTo": ["wangjingen163@163.com"],
+      "subject": "你好Daen",
+      "sentDate": "2024-04-25 22:33:17",
+      "fromEmail": "1330166564@qq.com",
+      "content": "这是一封测试邮件，如果你能收到，说明一切正常"
+    },
+    {
+      // 更多邮件...
+    }
+  ],
+  "timestamp": 1714055743673
+}</code></pre>
+
+            <div class="alert alert-warning mt-3">
+                <h5>重要提示：</h5>
+                <p>由于系统使用SHA-256方式存储密码，无法直接用于IMAP认证，因此API请求时必须提供原始密码作为参数。这样才能成功连接到IMAP服务器获取邮件。</p>
+                <p>请确保通过HTTPS发送请求，以保护密码安全。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 生成令牌的模态框 -->
+<div class="modal fade" id="generateTokenModal" tabindex="-1" aria-labelledby="generateTokenModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ path('app_mail_user_generate_token', {'id': mail.id}) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="generateTokenModalLabel">生成新的API令牌</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="expires_in" class="form-label">令牌有效期（天）</label>
+                        <input type="number" class="form-control" id="expires_in" name="expires_in" value="30" min="1" max="365">
+                        <div class="form-text">设置令牌的有效天数，最长365天</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">生成令牌</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,13 @@
+knp_paginator:
+    page_range: 5                       # 显示的页码范围
+    default_options:
+        page_name: page                 # 页码参数名称
+        sort_field_name: sort           # 排序字段参数名称
+        sort_direction_name: direction  # 排序方向参数名称
+        distinct: true                  # 确保结果不重复
+        filter_field_name: filterField  # 过滤字段参数名称
+        filter_value_name: filterValue  # 过滤值参数名称
+    template:
+        pagination: 'bundles/KnpPaginatorBundle/Pagination/custom_pagination.html.twig'     # 自定义分页模板
+        sortable: '@KnpPaginator/Pagination/bootstrap_v5_bi_sortable_link.html.twig' # 排序链接模板
+        filtration: '@KnpPaginator/Pagination/bootstrap_v5_filtration.html.twig'     # 过滤模板 
