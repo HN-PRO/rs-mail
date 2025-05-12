@@ -203,11 +203,6 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if app.request.get('_route') starts with 'app_mail_server_config' %}active{% endif %}" href="{{ path('app_mail_server_config_index') }}">
-                                    <i class="bi bi-server"></i> 邮箱服务器配置
-                                </a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link {% if app.request.get('_route') starts with 'app_system_log' %}active{% endif %}" href="{{ path('app_system_log_index') }}">
                                     <i class="bi bi-clock-history"></i> 系统日志
                                 </a>

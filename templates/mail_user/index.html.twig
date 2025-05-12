@@ -48,10 +48,7 @@
                             <th>ID</th>
                             <th>用户名</th>
                             <th>域名</th>
-                            <th>完整邮箱</th>
-                            <th>配额</th>
                             <th>创建时间</th>
-                            <th>状态</th>
                             <th>操作</th>
                         </tr>
                     </thead>
@@ -61,14 +58,7 @@
                                 <td>{{ user.id }}</td>
                                 <td>{{ user.email }}</td>
                                 <td>{{ user.domain.domain }}</td>
-                                <td>{{ user.email }}@{{ user.domain.domain }}</td>
-                                <td>{{ user.quota|default(0) }} MB</td>
                                 <td>{{ user.createdAt|date('Y-m-d H:i:s') }}</td>
-                                <td>
-                                    <span class="badge {{ user.status == '活跃' ? 'bg-success' : 'bg-danger' }}">
-                                        {{ user.status }}
-                                    </span>
-                                </td>
                                 <td>
                                     <button type="button" class="btn btn-edit btn-action edit-mail-user-btn" 
                                             data-id="{{ user.id }}" 
@@ -76,7 +66,6 @@
                                             data-domain-id="{{ user.domain.id }}"
                                             data-quota="{{ user.quota|default(0) }}"
                                             data-status="{{ user.status }}">编辑</button>
-                                    <a href="{{ path('app_mail_user_tokens', {'id': user.id}) }}" class="btn btn-info btn-action">API令牌</a>
                                     <form method="post" action="{{ path('app_mail_user_delete', {'id': user.id}) }}" style="display: inline-block" onsubmit="return confirm('确定要删除这个邮箱用户吗？');">
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
                                         <button class="btn btn-delete btn-action">删除</button>
