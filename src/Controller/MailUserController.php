@@ -312,6 +312,7 @@ class MailUserController extends AbstractController
                 if ($successCount % $batchSize === 0) {
                     $entityManager->flush();
                     $entityManager->clear(); // 清理内存
+                    $domain = $domainRepository->find($domainId);
                 }
             }
             

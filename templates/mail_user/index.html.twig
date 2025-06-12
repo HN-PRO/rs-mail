@@ -440,7 +440,7 @@
                 var status = this.getAttribute('data-status');
                 
                 document.getElementById('mail_user_id').value = id;
-                document.getElementById('email').value = email;
+                document.getElementById('email').value = email.split('@')[0];
                 document.getElementById('domain_id').value = domainId;
                 document.getElementById('quota').value = quota;
                 document.getElementById('password').required = false;
@@ -473,7 +473,7 @@
         function updateDomainDisplay() {
             var domainSelect = document.getElementById('domain_id');
             var domainDisplay = document.getElementById('domain-display');
-            
+
             if (domainSelect.value) {
                 var selectedOption = domainSelect.options[domainSelect.selectedIndex];
                 domainDisplay.textContent = selectedOption.text;
