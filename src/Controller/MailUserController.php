@@ -731,7 +731,7 @@ class MailUserController extends AbstractController
         $users = $qb->getQuery()->getResult();
         
         // 生成CSV内容
-        $csvContent = "ID,用户名,域名,创建时间";
+        $csvContent = "ID,用户名,域名,创建时间,状态";
         if ($includePasswords) {
             $csvContent .= ",密码哈希";
         }
@@ -742,6 +742,7 @@ class MailUserController extends AbstractController
             $csvContent .= $user->getEmail() . ",";
             $csvContent .= $user->getDomain()->getDomain() . ",";
             $csvContent .= $user->getCreatedAt()->format('Y-m-d H:i:s') . ",";
+            $csvContent .= $user->getStatus();
             if ($includePasswords) {
                 $csvContent .= "," . $user->getPassword();
             }
