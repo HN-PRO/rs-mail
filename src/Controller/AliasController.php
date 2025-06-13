@@ -142,15 +142,11 @@ class AliasController extends AbstractController
     }
     
     #[Route('/{id}/delete', name: 'app_alias_delete', methods: ['POST'])]
-    public function delete(Request $request, Alias $alias, EntityManagerInterface $entityManager, DomainRepository $domainRepository): Response
+    public function delete(Request $request, Alias $alias, EntityManagerInterface $entityManager): Response
     {
         if ($this->isCsrfTokenValid('delete'.$alias->getId(), $request->request->get('_token'))) {
-            $sourceAddress = $alias->getSourceAddress();
-            $targetAddress = $alias->getTargetAddress();
-            
-            // 获取域名并更新别名计数
-            $sourceDomain = substr(strrchr($sourceAddress, '@'), 1);
-            $domainRepository->updateAliasCount($sourceDomain, -1);
+            $sourceAddress = $alias->getSource();
+            $targetAddress = $alias->getDestination();
             
             $entityManager->remove($alias);
             
