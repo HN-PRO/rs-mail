@@ -151,16 +151,12 @@ class UserController extends AbstractController
     }
     
     #[Route('/{id}/delete', name: 'app_user_delete', methods: ['POST'])]
-    public function delete(Request $request, User $user, EntityManagerInterface $entityManager, DomainRepository $domainRepository): Response
+    public function delete(Request $request, User $user, EntityManagerInterface $entityManager): Response
     {
         if ($this->isCsrfTokenValid('delete'.$user->getId(), $request->request->get('_token'))) {
             $email = $user->getEmail();
-            $domain = $user->getDomain();
             
             $entityManager->remove($user);
-            
-            // 更新域名用户计数
-            $domainRepository->updateUserCount($domain, -1);
             
             // 记录系统日志
             $log = new SystemLog();
